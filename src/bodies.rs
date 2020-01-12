@@ -25,9 +25,9 @@ pub trait PhysicsBody {
     fn set(&self);
 }
 
-pub trait Entity: PhysicsBody + Renderable {
-    fn name(&self) -> &'static str;
-}
+pub trait Entity: PhysicsBody + Renderable {}
+
+impl<T> Entity for T where T: PhysicsBody + Renderable {}
 
 #[derive(Default)]
 pub struct World {
@@ -67,12 +67,6 @@ impl Planet {
             mass: 1.0,
             color: [1.0; 4], // white, RGB and last is alpha.
         }
-    }
-}
-
-impl Entity for Planet {
-    fn name(&self) -> &'static str {
-        ""
     }
 }
 
@@ -138,11 +132,5 @@ impl Renderable for Star {
         let extents = ellipse::circle(self.position[0], self.position[1], self.size);
 
         rectangle(self.color, extents, context.transform, graphics);
-    }
-}
-
-impl Entity for Star {
-    fn name(&self) -> &'static str {
-        "Star"
     }
 }
