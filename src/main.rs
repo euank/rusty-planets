@@ -1,4 +1,4 @@
-use std::f64::consts::FRAC_PI_4;
+use std::f64::consts::FRAC_PI_2;
 
 mod bodies;
 use bodies::*;
@@ -20,12 +20,10 @@ fn main() {
         let mut p = Planet::new();
         let wsize = window.size();
         let pos = Point2::new(wsize.width / 2.0 + 200.0, wsize.height / 2.0 + 200.0);
-        let vec_to_sun: Vector2<f64> = (star_pos - pos).normalize();
-        //let vec_perp_to_sun: Vector2<f64> = Rotation2::new(FRAC_PI_4) * vec_to_sun;
-        let vec_perp_to_sun: Vector2<f64> = vec_to_sun * Rotation2::new(FRAC_PI_4);
+        let vec_direction = Rotation2::new(FRAC_PI_2) * (star_pos - pos).normalize();
         p.update(PhysicsState{
             position: pos,
-            velocity: vec_perp_to_sun * 0.2,
+            velocity: vec_direction * 0.2,
         });
         Box::new(p)
     });
