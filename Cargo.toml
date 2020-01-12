@@ -1,7 +1,7 @@
 [package]
 name = "rusty-planets"
 version = "0.1.0"
-authors = ["Billy Rhoades <me@brod.es>"]
+authors = ["Euan Kemp", "Billy Rhoades <me@brod.es>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

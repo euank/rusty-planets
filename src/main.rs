@@ -1,5 +1,7 @@
+use std::f64::consts::FRAC_PI_4;
+
 mod bodies;
-use bodies::{Planet, Renderable, Star, World};
+use bodies::*;
 use nalgebra::*;
 use piston_window::*;
 
@@ -11,7 +13,22 @@ fn main() {
         .unwrap();
 
     let mut world = World::default();
+    let star = Star::new(window.size());
+    let star_pos = star.position();
     world.entities.push(Star::new(window.size()));
+    world.entities.push({
+        let mut p = Planet::new();
+        let wsize = window.size();
+        let pos = Point2::new(wsize.width / 2.0 + 200.0, wsize.height / 2.0 + 200.0);
+        let vec_to_sun: Vector2<f64> = (star_pos - pos).normalize();
+        //let vec_perp_to_sun: Vector2<f64> = Rotation2::new(FRAC_PI_4) * vec_to_sun;
+        let vec_perp_to_sun: Vector2<f64> = vec_to_sun * Rotation2::new(FRAC_PI_4);
+        p.update(PhysicsState{
+            position: pos,
+            velocity: vec_perp_to_sun * 0.2,
+        });
+        Box::new(p)
+    });
 
     while let Some(event) = window.next() {
         println!("event: {:?}", event);
@@ -31,10 +48,11 @@ fn main() {
                 });
             }
             Event::Loop(Loop::AfterRender(_args)) => {
+                // Update planets immediately after rendering them
                 // Do nothing
             }
-            Event::Loop(Loop::Update(_args)) => {
-                // TODO
+            Event::Loop(Loop::Update(args)) => {
+                world.tick(args.dt);
             }
             Event::Loop(Loop::Idle(_args)) => {
                 // Do nothing
