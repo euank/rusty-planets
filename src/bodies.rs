@@ -11,8 +11,7 @@ use nalgebra::{Point2, Vector2};
 const G: f64 = 6.674e-11f64;
 
 // How long to scale each second to
-//const TIME_SCALE: f64 = 0.2 * 365.0 * 24.0 * 60.0 * 60.0;
-const TIME_SCALE: f64 = 100.0;
+const TIME_SCALE: f64 = 1000.0 * 365.0 * 24.0 * 60.0 * 60.0;
 
 /***********************
  * Trait and struct definitions.
@@ -119,9 +118,11 @@ impl PhysicsBody for Planet {
             f * (e.position() - self.state.position).normalize()
         }).sum();
 
+        let new_velocity = self.state.velocity + force;
+
         PhysicsState {
             position: self.state.position + (self.state.velocity + force) * dt * TIME_SCALE,
-            velocity: self.state.velocity,
+            velocity: new_velocity,
         }
     }
 

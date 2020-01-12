@@ -19,11 +19,11 @@ fn main() {
     world.entities.push({
         let mut p = Planet::new();
         let wsize = window.size();
-        let pos = Point2::new(wsize.width / 2.0 + 200.0, wsize.height / 2.0 + 200.0);
+        let pos = Point2::new(wsize.width / 2.0 + 100.0, wsize.height / 2.0 + 100.0);
         let vec_direction = Rotation2::new(FRAC_PI_2) * (star_pos - pos).normalize();
         p.update(PhysicsState{
             position: pos,
-            velocity: vec_direction * 0.2,
+            velocity: vec_direction * 0.000000001,
         });
         Box::new(p)
     });
