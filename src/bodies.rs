@@ -29,9 +29,18 @@ pub trait Entity: PhysicsBody + Renderable {
     fn name(&self) -> &'static str;
 }
 
+#[derive(Default)]
 pub struct World {
     // Box for dynamic dispatch to multiple Entity types.
     pub entities: Vec<Box<dyn Entity>>
+}
+
+impl Renderable for World {
+    fn render(&self, context: &Context, graphics: &mut G2d) {
+        for entity in &self.entities {
+            entity.render(context, graphics);
+        }
+    }
 }
 
 // some ideas
