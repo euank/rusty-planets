@@ -6,7 +6,7 @@ use std::time::Duration;
 // and substraction to get a directional force vector.
 //
 // You can do all of this by hand with [f64; 2].
-use nalgebra::{Point2,Vector2};
+use nalgebra::{Point2, Vector2};
 
 /***********************
  * Trait and struct definitions.
@@ -32,7 +32,7 @@ pub trait Entity: PhysicsBody + Renderable {
 #[derive(Default)]
 pub struct World {
     // Box for dynamic dispatch to multiple Entity types.
-    pub entities: Vec<Box<dyn Entity>>
+    pub entities: Vec<Box<dyn Entity>>,
 }
 
 impl Renderable for World {
@@ -60,7 +60,7 @@ pub struct Planet {
 impl Planet {
     // You will probably want one of these
     pub fn new() -> Self {
-        Planet{
+        Planet {
             velocity: Vector2::from([0.0; 2]),
             position: Point2::from([0.0; 2]),
             size: 1.0,
@@ -81,12 +81,7 @@ impl Renderable for Planet {
         let extents = ellipse::circle(self.position[0], self.position[1], self.size);
 
         // example:
-        rectangle(
-            self.color,
-            extents,
-            context.transform,
-            graphics
-        );
+        rectangle(self.color, extents, context.transform, graphics);
     }
 }
 
@@ -99,8 +94,7 @@ impl PhysicsBody for Planet {
         ()
     }
 
-    fn set(&self) {
-    }
+    fn set(&self) {}
 
     fn mass(&self) -> f64 {
         self.mass
@@ -116,7 +110,7 @@ pub struct Star {
 
 impl Star {
     pub fn new(window_size: Size) -> Box<Star> {
-        Box::new(Star{
+        Box::new(Star {
             position: Point2::from([window_size.width / 2.0, window_size.height / 2.0]),
             color: [1.0, 1.0, 0.8, 1.0],
             mass: 1000.0,
@@ -132,8 +126,7 @@ impl PhysicsBody for Star {
         ()
     }
 
-    fn set(&self) {
-    }
+    fn set(&self) {}
 
     fn mass(&self) -> f64 {
         self.mass
@@ -144,12 +137,7 @@ impl Renderable for Star {
     fn render(&self, context: &Context, graphics: &mut G2d) {
         let extents = ellipse::circle(self.position[0], self.position[1], self.size);
 
-        rectangle(
-            self.color,
-            extents,
-            context.transform,
-            graphics
-        );
+        rectangle(self.color, extents, context.transform, graphics);
     }
 }
 

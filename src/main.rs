@@ -1,11 +1,10 @@
 mod bodies;
+use bodies::{Planet, Renderable, Star, World};
 use nalgebra::*;
 use piston_window::*;
-use bodies::{World, Planet, Star, Renderable};
 
 fn main() {
-    let mut window: PistonWindow =
-        WindowSettings::new("Rusty Planets", [640, 480])
+    let mut window: PistonWindow = WindowSettings::new("Rusty Planets", [640, 480])
         .exit_on_esc(true)
         .automatic_close(true)
         .build()
@@ -17,13 +16,9 @@ fn main() {
     while let Some(event) = window.next() {
         println!("event: {:?}", event);
         match &event {
-            Event::Input(input, _timestamp) => {
-                match handle_input(input) {
-                    Some(Action::Close) => {
-                        return
-                    },
-                    None => {},
-                }
+            Event::Input(input, _timestamp) => match handle_input(input) {
+                Some(Action::Close) => return,
+                None => {}
             },
             Event::Loop(Loop::Render(args)) => {
                 let window_size = args.window_size;
@@ -34,19 +29,23 @@ fn main() {
                     clear([0.1, 0.1, 0.1, 1.0], graphics);
                     world.render(&context, graphics);
                 });
-            },
+            }
             Event::Loop(Loop::AfterRender(_args)) => {
                 // Do nothing
-            },
+            }
             Event::Loop(Loop::Update(_args)) => {
                 // TODO
-            },
+            }
             Event::Loop(Loop::Idle(_args)) => {
                 // Do nothing
-            },
+            }
             Event::Custom(id, ev, _timestamp) => {
-                unimplemented!("no custom events expected or handled: id {:?}, ev {:?}", id, ev);
-            },
+                unimplemented!(
+                    "no custom events expected or handled: id {:?}, ev {:?}",
+                    id,
+                    ev
+                );
+            }
         }
     }
 }
@@ -57,18 +56,10 @@ enum Action {
 
 fn handle_input(input: &Input) -> Option<Action> {
     match input {
-        Input::Text(s) => {
-            match s.as_ref() {
-                "q" => {
-                    Some(Action::Close)
-                },
-                _ => {
-                    None
-                },
-            }
+        Input::Text(s) => match s.as_ref() {
+            "q" => Some(Action::Close),
+            _ => None,
         },
-        _ => {
-            None
-        }
+        _ => None,
     }
 }
