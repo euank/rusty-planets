@@ -1,7 +1,7 @@
-use gfx;
-use piston_window::*;
 use ::image::ImageBuffer;
 use ::image::Rgba;
+use gfx;
+use piston_window::*;
 
 // NOTE: You do NOT need to use nalgebra. It's hairy but has great vector
 // methods, including: ::norm() (2nd norm), ::normalize() (unit vector),
@@ -50,7 +50,7 @@ impl BufferExt for Buffer {
     fn map_length(&self, len: f64) -> u32 {
         let width = self.width() as f64;
         let universe_width = HALF_WIDTH * 2.0;
-        return (len * width / universe_width) as u32
+        return (len * width / universe_width) as u32;
     }
 
     fn draw_circle(&mut self, center: Point2<f64>, radius: f64, color: Rgba<u8>) {
@@ -62,11 +62,11 @@ impl BufferExt for Buffer {
 
         for x in (-radius)..=radius {
             for y in (-radius)..=radius {
-                if (x*x+y*y) < (radius*radius) {
+                if (x * x + y * y) < (radius * radius) {
                     let ix = mcenter.x as i32 + x;
                     let iy = mcenter.y as i32 + y;
                     if ix < 0 || iy < 0 || ix >= self.width() as i32 || iy >= self.height() as i32 {
-                        continue
+                        continue;
                     }
                     self.put_pixel(ix as u32, iy as u32, color);
                 }
@@ -102,8 +102,7 @@ pub struct PhysicsState {
 
 pub trait Entity: PhysicsBody + Renderable {}
 
-impl<T> Entity for T
-    where T: PhysicsBody + Renderable {}
+impl<T> Entity for T where T: PhysicsBody + Renderable {}
 
 pub struct World {
     pub entities: Vec<Box<dyn Entity>>,
@@ -111,7 +110,7 @@ pub struct World {
 
 impl World {
     pub fn new() -> Self {
-        World{
+        World {
             entities: Vec::new(),
         }
     }
@@ -119,13 +118,15 @@ impl World {
     pub fn tick(&mut self, dt: f64) {
         let mut new_states = Vec::with_capacity(self.entities.len());
         for (i, entity) in self.entities.iter().enumerate() {
-            let other_entities: Vec<_> = (&self.entities[0..i]).iter().chain((&self.entities[i+1..]).iter()).collect();
+            let other_entities: Vec<_> = (&self.entities[0..i])
+                .iter()
+                .chain((&self.entities[i + 1..]).iter())
+                .collect();
             new_states.push(entity.tick(dt, other_entities.as_slice()));
         }
         for (i, entity) in self.entities.iter_mut().enumerate() {
             entity.update(new_states[i]);
         }
-
     }
 
     pub fn render(&self, canvas: &mut Buffer) {
@@ -153,32 +154,32 @@ impl Planet {
     // You will probably want one of these
     pub fn new() -> Self {
         Planet {
-            state: PhysicsState{
+            state: PhysicsState {
                 velocity: Vector2::from([0.0; 2]),
                 position: Point2::from([0.0; 2]),
             },
             size: 0.0,
             mass: 0.000003003, // M☉
-            color: [255; 4], // white, RGB and last is alpha.
+            color: [255; 4],   // white, RGB and last is alpha.
         }
     }
 
     pub fn from_data(d: super::data::PlanetData) -> Self {
-        Planet{
-            size: 0.0, // TODO
+        Planet {
+            size: 0.0,               // TODO
             mass: d.mass * 10e24f64, // kg
-            color: [244; 4], // white
-            state: PhysicsState{
+            color: [244; 4],         // white
+            state: PhysicsState {
                 velocity: Vector2::new(0.0, d.orbital_velocity),
                 position: Point2::new(d.distance_from_sun * 1_000_000.0, 0.0),
-            }
+            },
         }
     }
 }
 
 impl Renderable for Planet {
     fn render(&self, canvas: &mut Buffer) {
-        canvas.draw_circle(self.state.position, self.size, Rgba{data: self.color});
+        canvas.draw_circle(self.state.position, self.size, Rgba { data: self.color });
     }
 }
 
@@ -189,11 +190,15 @@ impl PhysicsBody for Planet {
     // Billy: math took me a bit to get 100% right; feel free to ask for a tip.
     fn tick(&self, dt: f64, other_entities: &[&Box<dyn Entity>]) -> PhysicsState {
         // The force due to gravity
-        let force: Vector2<_> = other_entities.iter().map(|e| {
-            let f = G * (self.mass * e.mass()) / (nalgebra::distance_squared(&self.state.position, &e.position()));
-            let force = f * (e.position() - self.state.position).normalize();
-            force
-        }).sum();
+        let force: Vector2<_> = other_entities
+            .iter()
+            .map(|e| {
+                let f = G * (self.mass * e.mass())
+                    / (nalgebra::distance_squared(&self.state.position, &e.position()));
+                let force = f * (e.position() - self.state.position).normalize();
+                force
+            })
+            .sum();
 
         let new_velocity = self.state.velocity + (force * dt * TIME_SCALE / self.mass);
 
@@ -231,7 +236,7 @@ impl Star {
             },
             color: [255, 255, 200, 255],
             mass: 1.98850e30, // kg
-            size: 0.0, // fake width
+            size: 0.0,        // fake width
         })
     }
 }
@@ -257,6 +262,6 @@ impl PhysicsBody for Star {
 
 impl Renderable for Star {
     fn render(&self, image: &mut Buffer) {
-        image.draw_circle(self.state.position, self.size, Rgba{data: self.color});
+        image.draw_circle(self.state.position, self.size, Rgba { data: self.color });
     }
 }

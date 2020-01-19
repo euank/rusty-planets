@@ -15,4 +15,3 @@ pub struct PlanetData {
 }
 
 const data: &'static str = include_str!("../data/planets.json");
-

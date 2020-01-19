@@ -1,8 +1,8 @@
-use std::f64::consts::FRAC_PI_2;
 use ::image as im;
+use std::f64::consts::FRAC_PI_2;
 
-mod data;
 mod bodies;
+mod data;
 use bodies::*;
 use nalgebra::*;
 use piston_window::*;
@@ -35,15 +35,12 @@ fn main() {
 
     let mut texture_context = TextureContext {
         factory: window.factory.clone(),
-        encoder: window.factory.create_command_buffer().into()
+        encoder: window.factory.create_command_buffer().into(),
     };
 
     let mut canvas = im::ImageBuffer::new(1000, 1000);
-    let mut texture = Texture::from_image(
-        &mut texture_context,
-        &canvas,
-        &TextureSettings::new(),
-    ).unwrap();
+    let mut texture =
+        Texture::from_image(&mut texture_context, &canvas, &TextureSettings::new()).unwrap();
 
     while let Some(event) = window.next() {
         println!("event: {:?}", event);
@@ -53,7 +50,9 @@ fn main() {
                 None => {}
             },
             Event::Loop(Loop::Render(args)) => {
-                if canvas.width() != args.draw_size[0] as u32 || canvas.height() != args.draw_size[1] {
+                if canvas.width() != args.draw_size[0] as u32
+                    || canvas.height() != args.draw_size[1]
+                {
                     canvas = im::ImageBuffer::new(args.draw_size[0], args.draw_size[1]);
                 } else {
                     // otherwise clear the image buffer
