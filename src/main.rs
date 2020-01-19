@@ -54,6 +54,7 @@ fn main() {
                     || canvas.height() != args.draw_size[1]
                 {
                     canvas = im::ImageBuffer::new(args.draw_size[0], args.draw_size[1]);
+                    texture = Texture::from_image(&mut texture_context, &canvas, &TextureSettings::new()).unwrap();
                 } else {
                     // otherwise clear the image buffer
                     let (prev_w, prev_h) = (canvas.width(), canvas.height());
