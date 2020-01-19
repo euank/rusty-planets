@@ -1,10 +1,8 @@
 use ::image as im;
-use std::f64::consts::FRAC_PI_2;
 
 mod bodies;
 mod data;
 use bodies::*;
-use nalgebra::*;
 use piston_window::*;
 
 fn main() {
@@ -43,10 +41,22 @@ fn main() {
         Texture::from_image(&mut texture_context, &canvas, &TextureSettings::new()).unwrap();
 
     while let Some(event) = window.next() {
-        println!("event: {:?}", event);
+        //println!("event: {:?}", event);
         match &event {
             Event::Input(input, _timestamp) => match handle_input(input) {
                 Some(Action::Close) => return,
+                Some(Action::SpeedUp) => {
+                    world.speed_up();
+                },
+                Some(Action::SlowDown) => {
+                    world.slow_down();
+                },
+                Some(Action::ZoomOut) => {
+                    world.zoom_out();
+                },
+                Some(Action::ZoomIn) => {
+                    world.zoom_in();
+                },
                 None => {}
             },
             Event::Loop(Loop::Render(args)) => {
@@ -65,7 +75,7 @@ fn main() {
                     }
                     canvas = im::ImageBuffer::from_raw(prev_w, prev_h, vec).unwrap();
                 }
-                world.render(&mut canvas);
+                canvas = world.render(canvas);
                 texture.update(&mut texture_context, &canvas).unwrap();
                 window.draw_2d(&event, |context, graphics, device| {
                     texture_context.encoder.flush(device);
@@ -98,12 +108,20 @@ fn main() {
 
 enum Action {
     Close,
+    SpeedUp,
+    SlowDown,
+    ZoomOut,
+    ZoomIn,
 }
 
 fn handle_input(input: &Input) -> Option<Action> {
     match input {
         Input::Text(s) => match s.as_ref() {
             "q" => Some(Action::Close),
+            "+" => Some(Action::SpeedUp),
+            "-" => Some(Action::SlowDown),
+            "z" => Some(Action::ZoomIn),
+            "x" => Some(Action::ZoomOut),
             _ => None,
         },
         _ => None,

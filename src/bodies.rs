@@ -1,7 +1,5 @@
 use ::image::ImageBuffer;
 use ::image::Rgba;
-use gfx;
-use piston_window::*;
 
 // NOTE: You do NOT need to use nalgebra. It's hairy but has great vector
 // methods, including: ::norm() (2nd norm), ::normalize() (unit vector),
@@ -13,31 +11,33 @@ use nalgebra::{Point2, Vector2};
 /// Gravitational Constant in km^3/(kg*s^2)
 const G: f64 = 6.67430e-20;
 
-// const TIME_SCALE: f64 = 1000.0 * 365.0 * 24.0 * 60.0 * 60.0;
-// How long to scale each second to
-const TIME_SCALE: f64 = 100.0 * 24.0 * 60.0 * 60.0;
-
-// The width of our screen in km.
-const HALF_WIDTH: f64 = 100_000_000.0;
-
 const MIN_PIXEL_SIZE: u32 = 2;
 
 type Buffer = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
-trait BufferExt {
-    fn map_point(&self, pos: Point2<f64>) -> Point2<u32>;
-    fn map_length(&self, len: f64) -> u32;
-    fn draw_circle(&mut self, center: Point2<f64>, radius: f64, color: Rgba<u8>);
+struct ScaledBuffer {
+    inner: Buffer,
+    width: f64,
 }
 
-impl BufferExt for Buffer {
+impl ScaledBuffer {
+    fn new(buf: Buffer, width: f64) -> Self {
+        ScaledBuffer{
+            inner: buf,
+            width,
+        }
+    }
+    fn into_buffer(self) -> Buffer {
+        self.inner
+    }
+
     fn map_point(&self, pos: Point2<f64>) -> Point2<u32> {
         // 0.0 is in the center in universe coordinates, but upper-left in image coordinates. Do
         // that shifting too.
-        let width = self.width() as f64;
-        let height = self.height() as f64;
+        let width = self.inner.width() as f64;
+        let height = self.inner.height() as f64;
 
-        let universe_width = HALF_WIDTH * 2.0;
+        let universe_width = self.width * 2.0;
         let universe_height = universe_width * height / width;
 
         // what percent x and y were are at relative to 0;
@@ -48,8 +48,8 @@ impl BufferExt for Buffer {
     }
 
     fn map_length(&self, len: f64) -> u32 {
-        let width = self.width() as f64;
-        let universe_width = HALF_WIDTH * 2.0;
+        let width = self.inner.width() as f64;
+        let universe_width = self.width * 2.0;
         return (len * width / universe_width) as u32;
     }
 
@@ -65,10 +65,10 @@ impl BufferExt for Buffer {
                 if (x * x + y * y) < (radius * radius) {
                     let ix = mcenter.x as i32 + x;
                     let iy = mcenter.y as i32 + y;
-                    if ix < 0 || iy < 0 || ix >= self.width() as i32 || iy >= self.height() as i32 {
+                    if ix < 0 || iy < 0 || ix >= self.inner.width() as i32 || iy >= self.inner.height() as i32 {
                         continue;
                     }
-                    self.put_pixel(ix as u32, iy as u32, color);
+                    self.inner.put_pixel(ix as u32, iy as u32, color);
                 }
             }
         }
@@ -82,7 +82,7 @@ impl BufferExt for Buffer {
  * Just fill in the empty tuples, the empty methods in "impl", and complete fn main().
  ***********************/
 pub trait Renderable {
-    fn render(&self, image: &mut Buffer);
+    fn render(&self, image: &mut ScaledBuffer);
 }
 
 pub trait PhysicsBody {
@@ -106,16 +106,45 @@ impl<T> Entity for T where T: PhysicsBody + Renderable {}
 
 pub struct World {
     pub entities: Vec<Box<dyn Entity>>,
+
+    // How long to scale each second to
+    time_scale: f64,
+    width: f64,
 }
 
 impl World {
     pub fn new() -> Self {
         World {
             entities: Vec::new(),
+            time_scale: 100.0 * 24.0 * 60.0 * 60.0,
+            width: 150_000_000.0,
+        }
+    }
+
+    pub fn zoom_out(&mut self) {
+        self.width += 1_000_000.0;
+    }
+
+    pub fn zoom_in(&mut self) {
+        self.width -= 1_000_000.0;
+        if self.width < 1_000.0 {
+            self.width = 1000.0;
+        }
+    }
+
+    pub fn speed_up(&mut self) {
+        self.time_scale += 10.0 * 24.0 * 60.0 * 60.0;
+    }
+
+    pub fn slow_down(&mut self) {
+        self.time_scale -= 10.0 * 24.0 * 60.0 * 60.0;
+        if self.time_scale <= 0.00 {
+            self.time_scale = 0.0;
         }
     }
 
     pub fn tick(&mut self, dt: f64) {
+        let dt = dt * self.time_scale;
         let mut new_states = Vec::with_capacity(self.entities.len());
         for (i, entity) in self.entities.iter().enumerate() {
             let other_entities: Vec<_> = (&self.entities[0..i])
@@ -129,11 +158,12 @@ impl World {
         }
     }
 
-    pub fn render(&self, canvas: &mut Buffer) {
-        let w: &mut Buffer = canvas.into();
+    pub fn render(&self, canvas: Buffer) -> Buffer {
+        let mut buf = ScaledBuffer::new(canvas, self.width);
         for entity in &self.entities {
-            entity.render(w);
+            entity.render(&mut buf);
         }
+        buf.into_buffer()
     }
 }
 
@@ -178,7 +208,7 @@ impl Planet {
 }
 
 impl Renderable for Planet {
-    fn render(&self, canvas: &mut Buffer) {
+    fn render(&self, canvas: &mut ScaledBuffer) {
         canvas.draw_circle(self.state.position, self.size, Rgba { data: self.color });
     }
 }
@@ -200,10 +230,10 @@ impl PhysicsBody for Planet {
             })
             .sum();
 
-        let new_velocity = self.state.velocity + (force * dt * TIME_SCALE / self.mass);
+        let new_velocity = self.state.velocity + (force * dt / self.mass);
 
         PhysicsState {
-            position: self.state.position + new_velocity * dt * TIME_SCALE,
+            position: self.state.position + new_velocity * dt,
             velocity: new_velocity,
         }
     }
@@ -242,9 +272,8 @@ impl Star {
 }
 
 impl PhysicsBody for Star {
-    // Let's pretend the star doesn't move to reduce nuttiness. You can just
-    // return relevant phyiscs details here.
-    fn tick(&self, dt: f64, world: &[&Box<dyn Entity>]) -> PhysicsState {
+    fn tick(&self, _dt: f64, _other_entities: &[&Box<dyn Entity>]) -> PhysicsState {
+        // pretend the sun doesn't move
         self.state
     }
 
@@ -261,7 +290,7 @@ impl PhysicsBody for Star {
 }
 
 impl Renderable for Star {
-    fn render(&self, image: &mut Buffer) {
+    fn render(&self, image: &mut ScaledBuffer) {
         image.draw_circle(self.state.position, self.size, Rgba { data: self.color });
     }
 }

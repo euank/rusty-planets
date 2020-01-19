@@ -1,7 +1,7 @@
 use ::serde::Deserialize;
 
 pub fn get_planetdata() -> Vec<PlanetData> {
-    serde_json::from_str(data).unwrap()
+    serde_json::from_str(DATA).unwrap()
 }
 
 #[derive(Deserialize)]
@@ -14,4 +14,4 @@ pub struct PlanetData {
     pub diameter: f64,
 }
 
-const data: &'static str = include_str!("../data/planets.json");
+const DATA: &'static str = include_str!("../data/planets.json");
