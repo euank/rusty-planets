@@ -11,7 +11,7 @@ use nalgebra::{Point2, Vector2};
 /// Gravitational Constant in km^3/(kg*s^2)
 const G: f64 = 6.67430e-20;
 
-const MIN_PIXEL_SIZE: u32 = 2;
+const MIN_PIXEL_SIZE: u32 = 1;
 
 type Buffer = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
@@ -57,7 +57,7 @@ impl ScaledBuffer {
     fn draw_circle(&mut self, center: Point2<f64>, radius: f64, color: Rgba<u8>) {
         let mcenter = self.map_point(center);
         let mut radius = self.map_length(radius) as i32;
-        if radius * 2 < MIN_PIXEL_SIZE as i32 {
+        if radius < MIN_PIXEL_SIZE as i32 {
             radius = MIN_PIXEL_SIZE as i32;
         }
 
@@ -123,11 +123,11 @@ impl World {
     }
 
     pub fn zoom_out(&mut self) {
-        self.width += 1_000_000.0;
+        self.width *= 1.05;
     }
 
     pub fn zoom_in(&mut self) {
-        self.width -= 1_000_000.0;
+        self.width *= 0.95;
         if self.width < 1_000.0 {
             self.width = 1000.0;
         }
@@ -184,12 +184,12 @@ pub struct Planet {
 impl Planet {
     pub fn from_data(d: super::data::PlanetData) -> Self {
         Planet {
-            size: 0.0,               // TODO
+            size: d.diameter, // km
             mass: d.mass * 10e24f64, // kg
-            color: [244; 4],         // white
+            color: [244; 4], // white
             state: PhysicsState {
-                velocity: Vector2::new(0.0, d.orbital_velocity),
-                position: Point2::new(d.distance_from_sun * 1_000_000.0, 0.0),
+                velocity: Vector2::new(0.0, d.orbital_velocity), // km/s
+                position: Point2::new(d.distance_from_sun * 1_000_000.0, 0.0), // km
             },
         }
     }
@@ -197,7 +197,7 @@ impl Planet {
 
 impl Renderable for Planet {
     fn render(&self, canvas: &mut ScaledBuffer) {
-        canvas.draw_circle(self.state.position, self.size, Rgba(self.color));
+        canvas.draw_circle(self.state.position, scale_size(self.size), Rgba(self.color));
     }
 }
 
@@ -254,7 +254,7 @@ impl Star {
             },
             color: [255, 255, 200, 255],
             mass: 1.98850e30, // kg
-            size: 0.0,        // fake width
+            size: 1_392_700.0, // km
         })
     }
 }
@@ -277,8 +277,15 @@ impl PhysicsBody for Star {
     }
 }
 
+// scale_size attempts to scale the size of a star or planet in such a way that they're still
+// relatively sorta right (bigger things are still bigger), but in a way where larger things don't
+// just dwarf everything.
+fn scale_size(s: f64) -> f64 {
+    s.log(1.8) * 200_000.0
+}
+
 impl Renderable for Star {
     fn render(&self, image: &mut ScaledBuffer) {
-        image.draw_circle(self.state.position, self.size, Rgba(self.color));
+        image.draw_circle(self.state.position, scale_size(self.size), Rgba(self.color));
     }
 }
