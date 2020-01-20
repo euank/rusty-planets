@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ::image::ImageBuffer;
 use ::image::Rgba;
 
@@ -183,10 +185,29 @@ pub struct Planet {
 
 impl Planet {
     pub fn from_data(d: super::data::PlanetData) -> Self {
+
+        // hack: map of id to color
+        // All colors taken from a color picker on the images in this quora post:
+        // https://www.quora.com/What-is-the-colour-of-each-planet
+        let default_color = [244; 4]; // white
+        let color_map: HashMap<u32, [u8; 4]> = vec![
+            (1, [0xa0, 0x85, 0x68, 255]),
+            (2, [0x99, 0x7d, 0x4d, 255]),
+            (3, [0x1c, 0x24, 0x3b, 255]),
+            (4, [0xc2, 0x5a, 0x1e, 255]),
+            (5, [0xbb, 0xbf, 0xc2, 255]),
+            (6, [0xde, 0xbc, 0x7c, 255]),
+            (7, [0xbd, 0xe3, 0xe6, 255]),
+            (8, [0x40, 0x68, 0xfd, 255]),
+            (9, [0xed, 0xc7, 0xa2, 255]),
+        ].into_iter().collect();
+
+        let color = color_map.get(&d.id).unwrap_or(&default_color);
+
         Planet {
             size: d.diameter, // km
             mass: d.mass * 10e24f64, // kg
-            color: [244; 4], // white
+            color: *color,
             state: PhysicsState {
                 velocity: Vector2::new(0.0, d.orbital_velocity), // km/s
                 position: Point2::new(d.distance_from_sun * 1_000_000.0, 0.0), // km
@@ -252,7 +273,7 @@ impl Star {
                 position: Point2::new(0.0, 0.0),
                 velocity: Vector2::new(0.0, 0.0),
             },
-            color: [255, 255, 200, 255],
+            color: [255, 255, 100, 255], // yellow
             mass: 1.98850e30, // kg
             size: 1_392_700.0, // km
         })
