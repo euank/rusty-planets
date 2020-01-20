@@ -31,7 +31,8 @@ fn main() {
     let mut texture =
         Texture::from_image(&mut texture_context, &canvas, &TextureSettings::new()).unwrap();
 
-    while let Some(event) = window.next() {
+    let mut events = Events::new(EventSettings::new().ups(60));
+    while let Some(event) = events.next(&mut window) {
         //println!("event: {:?}", event);
         match &event {
             Event::Input(input, _timestamp) => match handle_input(input) {
