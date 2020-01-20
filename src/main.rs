@@ -8,6 +8,8 @@ use piston_window::*;
 fn main() {
     let mut window: PistonWindow = WindowSettings::new("Rusty Planets", [1000, 1000])
         .exit_on_esc(true)
+        .resizable(true)
+        .graphics_api(OpenGL::V3_2)
         .automatic_close(true)
         .build()
         .unwrap();
@@ -20,23 +22,12 @@ fn main() {
     for planet in planets {
         world.entities.push(Box::new(Planet::from_data(planet)));
     }
-    //world.entities.push({
-    //    let mut p: Planet = Planet::new();
-    //    let pos = Point2::new(1.0, 0.0); // earth au from sun
-    //    let vec_direction = Rotation2::new(FRAC_PI_2) * (Point2::new(0.0, 0.0) - pos).normalize();
-    //    p.update(PhysicsState{
-    //        position: pos,
-    //        velocity: vec_direction * 1.9907e-7, // earth velocity in au/s
-    //    });
-    //    Box::new(p)
-    //});
-
     let mut texture_context = TextureContext {
         factory: window.factory.clone(),
         encoder: window.factory.create_command_buffer().into(),
     };
 
-    let mut canvas = im::ImageBuffer::new(1000, 1000);
+    let mut canvas = im::ImageBuffer::new(640, 640);
     let mut texture =
         Texture::from_image(&mut texture_context, &canvas, &TextureSettings::new()).unwrap();
 
@@ -44,7 +35,10 @@ fn main() {
         //println!("event: {:?}", event);
         match &event {
             Event::Input(input, _timestamp) => match handle_input(input) {
-                Some(Action::Close) => return,
+                Some(Action::Close) => {
+                    window.set_should_close(true);
+                    return
+                },
                 Some(Action::SpeedUp) => {
                     world.speed_up();
                 },
@@ -60,7 +54,12 @@ fn main() {
                 None => {}
             },
             Event::Loop(Loop::Render(args)) => {
-                if canvas.width() != args.draw_size[0] as u32
+                // TODO: dpi only changes if the window switches screens, but the winit dpi
+                // changed event isn't exposed in this eventloop, so I'm stuck with doing this
+                // every iteration.
+                // Upstream should probably expose that event.
+                let dpi = window.window.ctx.window().get_hidpi_factor();
+                if canvas.width() != args.draw_size[0]
                     || canvas.height() != args.draw_size[1]
                 {
                     canvas = im::ImageBuffer::new(args.draw_size[0], args.draw_size[1]);
@@ -71,18 +70,24 @@ fn main() {
                     let mut vec: Vec<_> = canvas.into_raw();
                     // memset 0, but safe. Should optimize to memset
                     for p in vec.iter_mut() {
-                        *p = 0;
+                        *p = 10;
                     }
                     canvas = im::ImageBuffer::from_raw(prev_w, prev_h, vec).unwrap();
                 }
                 canvas = world.render(canvas);
                 texture.update(&mut texture_context, &canvas).unwrap();
-                window.draw_2d(&event, |context, graphics, device| {
+                window.draw_2d(&event, |c, graphics, device| {
+                    let view = c.transform.scale(1.0 / dpi, 1.0 / dpi);
+                    let transform = view.trans(0.0, 0.0);
                     texture_context.encoder.flush(device);
                     // Set the background to hipster grey.
                     // Also clears anything previously drawn.
                     clear([0.1, 0.1, 0.1, 1.0], graphics);
-                    image(&texture, context.transform, graphics);
+                    image(
+                        &texture,
+                        transform,
+                        graphics,
+                    );
                 });
             }
             Event::Loop(Loop::AfterRender(_args)) => {

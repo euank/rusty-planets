@@ -15,7 +15,7 @@ const MIN_PIXEL_SIZE: u32 = 2;
 
 type Buffer = ImageBuffer<Rgba<u8>, Vec<u8>>;
 
-struct ScaledBuffer {
+pub struct ScaledBuffer {
     inner: Buffer,
     width: f64,
 }
@@ -39,6 +39,7 @@ impl ScaledBuffer {
 
         let universe_width = self.width * 2.0;
         let universe_height = universe_width * height / width;
+
 
         // what percent x and y were are at relative to 0;
         let x_fraction = 0.5 + (pos.x / universe_width / 2.0);
@@ -181,19 +182,6 @@ pub struct Planet {
  ***********************/
 
 impl Planet {
-    // You will probably want one of these
-    pub fn new() -> Self {
-        Planet {
-            state: PhysicsState {
-                velocity: Vector2::from([0.0; 2]),
-                position: Point2::from([0.0; 2]),
-            },
-            size: 0.0,
-            mass: 0.000003003, // M☉
-            color: [255; 4],   // white, RGB and last is alpha.
-        }
-    }
-
     pub fn from_data(d: super::data::PlanetData) -> Self {
         Planet {
             size: 0.0,               // TODO
@@ -209,7 +197,7 @@ impl Planet {
 
 impl Renderable for Planet {
     fn render(&self, canvas: &mut ScaledBuffer) {
-        canvas.draw_circle(self.state.position, self.size, Rgba { data: self.color });
+        canvas.draw_circle(self.state.position, self.size, Rgba(self.color));
     }
 }
 
@@ -291,6 +279,6 @@ impl PhysicsBody for Star {
 
 impl Renderable for Star {
     fn render(&self, image: &mut ScaledBuffer) {
-        image.draw_circle(self.state.position, self.size, Rgba { data: self.color });
+        image.draw_circle(self.state.position, self.size, Rgba(self.color));
     }
 }
